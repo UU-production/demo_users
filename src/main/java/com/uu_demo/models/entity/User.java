@@ -7,6 +7,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Set;
 
@@ -22,7 +23,7 @@ public class User implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
-    private Long id;
+    private Long userId;
 
     @NotNull
     private String fullName;
@@ -37,13 +38,14 @@ public class User implements UserDetails {
     private String password;
 
     @NotNull
-    @ManyToMany(fetch = FetchType.LAZY, targetEntity = Role.class)
-    @JoinTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "role_id"))
-    private Set<Role> roles;
+    @ManyToOne(fetch = FetchType.LAZY, targetEntity = Role.class)
+    @JoinColumn(name = "role_id", nullable = false)
+    private Role role;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
+        ArrayList<Role> roles = new ArrayList<>();
+        roles.add(role);
         return roles;
     }
 

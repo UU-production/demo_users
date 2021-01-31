@@ -1,6 +1,7 @@
 package com.uu_demo.models.entity;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
 
@@ -25,9 +26,14 @@ public class Role implements GrantedAuthority {
     @NotNull
     private String roleName;
 
-    @NotNull
-    @ManyToMany(mappedBy = "roles")
+    @Transient
+    @JsonIgnore
+    @OneToMany(mappedBy = "role")
     private Set<User> users;
+
+    public Role(String roleName) {
+        this.roleName = roleName;
+    }
 
 
     @Override
