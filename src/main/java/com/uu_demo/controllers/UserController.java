@@ -1,15 +1,12 @@
 package com.uu_demo.controllers;
 
 
-import com.uu_demo.converters.UserConverter;
+
 import com.uu_demo.models.dto.UserDto;
 import com.uu_demo.models.dto.UserRegisterDto;
 import com.uu_demo.models.dto.UserResetPasswordDto;
 import com.uu_demo.models.dto.UserUpdateInfoDto;
 import com.uu_demo.models.entity.User;
-import com.uu_demo.models.util.OnCreate;
-import com.uu_demo.models.util.OnUpdate;
-import com.uu_demo.service.abstracts.dto.UserDtoService;
 import com.uu_demo.service.abstracts.model.UserService;
 import lombok.NonNull;
 import lombok.ToString;
@@ -31,40 +28,32 @@ import java.util.Optional;
 @Validated
 public class UserController {
 
-    private final UserDtoService userDtoService;
     private final UserService userService;
-    private final UserConverter userConverter;
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    public UserController(UserDtoService userDtoService, UserService userService, UserConverter userConverter) {
-        this.userDtoService = userDtoService;
+    public UserController( UserService userService) {
         this.userService = userService;
-        this.userConverter = userConverter;
     }
 
     @GetMapping(value = "/{id}")
-    public ResponseEntity<?> getUserById(@PathVariable @Valid @NonNull Long id) {
-        Optional<UserDto> optionalUserDto = userDtoService.getUserDtoById(id);
-        if (optionalUserDto.isPresent()) {
-            UserDto userDto = optionalUserDto.get();
+    public UserDto getUserById(@PathVariable @Valid @NonNull Long id) {
+        Optional<User> optionalUser = userService.getUserById(id);
+            User user = optionalUser.get();
             logger.info(String.format("Пользователь с ID: %d получен!", id));
-            return ResponseEntity.ok(userDto);
-        }
-        logger.info(String.format("Пользователь с указанным ID: %d не найден!", id));
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(String.format("User with ID: %d does not exist.", id));
+            return UserDto.toUserDto(user);
     }
 
 
     @GetMapping(value = "/all")
-    public ResponseEntity<List<UserDto>> getAllUsers() {
+    public List<User> getAllUsers() {
         logger.info("Получен список пользователей");
-        return ResponseEntity.ok(userDtoService.getAllUserDto());
+        return userService.getAll();
     }
 
 
     @PostMapping(value = "/create")
-    @Validated(OnCreate.class)
+    @Validated
     public ResponseEntity<?> createUser(@RequestBody @Valid @NotNull UserRegisterDto userRegisterDto) {
         User user = userService.getByEmail(userRegisterDto.getEmail()).orElseGet(() -> userConverter.toEntity(userRegisterDto));
         if (user.isEnabled()) {

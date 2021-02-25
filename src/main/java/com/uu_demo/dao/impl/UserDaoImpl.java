@@ -33,6 +33,14 @@ public class UserDaoImpl extends GenericDaoAbstract<User,Long> implements UserDa
     }
 
     @Override
+    public Optional<User> getUserById(Long userId) {
+
+        TypedQuery<User> query = entityManager.createQuery("SELECT u from User u where u.userId = :userId",User.class)
+                .setParameter("userId",userId);
+        return SingleResultUtil.getSingleResultOrNull(query);
+    }
+
+    @Override
     public boolean existByEmail(String email) {
         Long count = entityManager.createQuery(
                 "SELECT COUNT(u) " +

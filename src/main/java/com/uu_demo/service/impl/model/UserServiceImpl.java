@@ -3,24 +3,22 @@ package com.uu_demo.service.impl.model;
 import com.uu_demo.dao.abstracts.UserDao;
 import com.uu_demo.models.entity.Role;
 import com.uu_demo.models.entity.User;
-import com.uu_demo.service.GenericServiceAbstract;
 import com.uu_demo.service.abstracts.model.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 
 @Service
-public class UserServiceImpl extends GenericServiceAbstract<User, Long> implements UserService {
+public class UserServiceImpl  implements UserService {
 
-    private final UserDao userDao;
+    private  UserDao userDao;
 
-    @Autowired
     public UserServiceImpl(UserDao userDao) {
-        super(userDao);
         this.userDao = userDao;
     }
 
@@ -28,9 +26,24 @@ public class UserServiceImpl extends GenericServiceAbstract<User, Long> implemen
     private PasswordEncoder passwordEncoder;
 
     @Override
+    public List<User> getAll() {
+        return userDao.getAll();
+    }
+
+    @Override
     @Transactional
     public Optional<User> getByEmail(String email) {
         return userDao.getByEmail(email);
+    }
+
+    @Override
+    public Optional<User> getUserById(Long userId) {
+        Optional<User> optionalUser = userDao.getUserById(userId);
+        if (optionalUser.isPresent()) {
+            return optionalUser;
+        }
+        return null;
+
     }
 
     @Override
