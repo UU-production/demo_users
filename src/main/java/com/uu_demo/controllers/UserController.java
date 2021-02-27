@@ -1,7 +1,5 @@
 package com.uu_demo.controllers;
 
-
-
 import com.uu_demo.models.dto.UserDto;
 import com.uu_demo.models.dto.UserRegisterDto;
 import com.uu_demo.models.dto.UserResetPasswordDto;
@@ -12,8 +10,6 @@ import lombok.NonNull;
 import lombok.ToString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,91 +28,75 @@ public class UserController {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    public UserController( UserService userService) {
+    public UserController(UserService userService) {
         this.userService = userService;
     }
 
     @GetMapping(value = "/{id}")
     public UserDto getUserById(@PathVariable @Valid @NonNull Long id) {
         Optional<User> optionalUser = userService.getUserById(id);
-            User user = optionalUser.get();
-            logger.info(String.format("Пользователь с ID: %d получен!", id));
-            return UserDto.toUserDto(user);
+        User user = optionalUser.get();
+        logger.info(String.format("User with ID: %d has received!", id));
+        return UserDto.toUserDto(user);
     }
 
 
     @GetMapping(value = "/all")
     public List<User> getAllUsers() {
-        logger.info("Получен список пользователей");
+        logger.info("User's list received");
         return userService.getAll();
     }
 
 
     @PostMapping(value = "/create")
     @Validated
-    public ResponseEntity<?> createUser(@RequestBody @Valid @NotNull UserRegisterDto userRegisterDto) {
-        User user = userService.getByEmail(userRegisterDto.getEmail()).orElseGet(() -> userConverter.toEntity(userRegisterDto));
-        if (user.isEnabled()) {
-            logger.info(String.format("Пользователь с email: %s уже существует и зарегистрирован", user.getEmail()));
-            return ResponseEntity.badRequest().body(String.format("User with email '%s' already registered. Email should be unique", user.getEmail()));
-        }
+    public UserDto createUser(@RequestBody @Valid @NotNull UserRegisterDto userRegisterDto) {
+        User user = userService.getByEmail(userRegisterDto.getEmail()).orElseGet(() -> UserRegisterDto.toUserEntity(userRegisterDto));
         if (user.getUserId() == null) {
-            userService.create(user);
-            logger.info(String.format("Пользователь с email: %s добавлен в базу данных", user.getEmail()));
-
-        } else {
             Long id = user.getUserId();
-            user = userConverter.toEntity(userRegisterDto);
+            user = UserRegisterDto.toUserEntity(userRegisterDto);
             user.setUserId(id);
-            userService.update(user);
-            logger.info(String.format("Регистрационные данные пользователя с эл. почтой '%s' обновлены", user.getEmail()));
+            userService.updateUser(user);
+            logger.info(String.format("User's register data with email '%s' have updated", user.getEmail()));
+        } else {
+            userService.createUser(user);
         }
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(userConverter.toDto(user));
+        return UserDto.toUserDto(user);
     }
 
     @PutMapping(value = "/update")
-    @Validated(OnUpdate.class)
-    public ResponseEntity<?> updateUserInfo(@Valid @RequestBody UserUpdateInfoDto userUpdateInfoDto) {
-        Optional<User> optionalUser = userService.getById(userUpdateInfoDto.getUserId());
-        if (optionalUser.isPresent()) {
-            if (userService.existsAnotherByEmail(userUpdateInfoDto.getEmail(), userUpdateInfoDto.getUserId())) {
-                logger.info(String.format("Пользователь с email: %s уже существует", userUpdateInfoDto.getEmail()));
-                return ResponseEntity.badRequest().body(String.format("User with email: %s already exist. Email should be unique", userUpdateInfoDto.getEmail()));
+    @Validated
+    public UserDto updateUserInfo(@Valid @RequestBody UserUpdateInfoDto userUpdateInfoDto) {
+        Optional<User> optionalUser = userService.getUserById(userUpdateInfoDto.getUserId());
+        if (!(optionalUser.isPresent())) {
+            if (!(userService.existsAnotherByEmail(userUpdateInfoDto.getEmail(), userUpdateInfoDto.getUserId()))) {
+                logger.info(String.format("User with email: %s has already exist", userUpdateInfoDto.getEmail()));
             }
-            User user = userConverter.toEntity(userUpdateInfoDto);
-            userService.updateInfo(user);
-            logger.info(String.format("Пользователь с ID: %d обновлён успешно", userUpdateInfoDto.getUserId()));
-            return ResponseEntity.ok(userConverter.toDto(user));
         }
-        logger.info(String.format("Пользователь с ID: %d не существует", userUpdateInfoDto.getUserId()));
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(String.format("User with ID: %d does not exist.", userUpdateInfoDto.getUserId()));
+        User user = UserUpdateInfoDto.toUserEntity(userUpdateInfoDto);
+        userService.updateInfo(user);
+        logger.info(String.format("User with ID: %d successful updated", userUpdateInfoDto.getUserId()));
+        return UserDto.toUserDto(user);
     }
 
-    @PatchMapping("/{id}/password")
-    @Validated(OnCreate.class)
-    public ResponseEntity<?> updateUserPassword(@PathVariable Long id, @Valid @RequestBody UserResetPasswordDto userResetPasswordDto) {
 
-        Optional<User> optionalUser = userService.getById(id);
+    @PatchMapping("/{id}/password")
+    @Validated
+    public void updateUserPassword(@PathVariable Long id, @Valid @RequestBody UserResetPasswordDto userResetPasswordDto) {
+
+        Optional<User> optionalUser = userService.getUserById(id);
         if (!optionalUser.isPresent()) {
-            logger.info(String.format("Пользователь с ID: %d не существует", id));
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(String.format("User with ID: %d does not exist.", id));
+            logger.info(String.format("User with  ID: %d does not exist", id));
         }
         User user = optionalUser.get();
         user.setPassword(userResetPasswordDto.getPassword());
         userService.updateUserPassword(user);
-        logger.info(String.format("Пароль пользователя %d изменен", id));
-        return ResponseEntity.ok()
-                .body(String.format("Password changed for user %d", id));
+        logger.info(String.format("User's password %d has been changed", id));
     }
 
     @DeleteMapping(value = "/delete", params = "userId")
-    public ResponseEntity<?> deleteUserById(@RequestParam("userId") @NonNull Long userId) {
-        userService.deleteById(userId);
-        return ResponseEntity.ok().body(String.format("User with id: %d is no longer a member  with id: %s", userId));
-
-
+    public void deleteUserById(@RequestParam("userId") @NonNull Long userId) {
+        userService.deleteUserById(userId);
     }
 
 

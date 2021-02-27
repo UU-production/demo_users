@@ -7,7 +7,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Set;
 
@@ -38,14 +37,31 @@ public class User implements UserDetails {
     private String password;
 
     @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, targetEntity = Role.class)
-    @JoinColumn(name = "role_id", nullable = false)
-    private Role role;
+    @ManyToMany(fetch = FetchType.EAGER, targetEntity = Role.class)
+    @JoinTable(name = "user_role", joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id"))
+    private Set<Role> roles;
+
+    public User(@NotNull String fullName, String avatar, @NotNull String email, @NotNull String password) {
+        this.fullName = fullName;
+        this.avatar = avatar;
+        this.email = email;
+        this.password = password;
+    }
+
+    public User(Long userId, @NotNull String fullName, String avatar, @NotNull String email) {
+        this.userId = userId;
+        this.fullName = fullName;
+        this.avatar = avatar;
+        this.email = email;
+    }
+
+    public User(@NotNull String password) {
+        this.password = password;
+    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        ArrayList<Role> roles = new ArrayList<>();
-        roles.add(role);
         return roles;
     }
 
