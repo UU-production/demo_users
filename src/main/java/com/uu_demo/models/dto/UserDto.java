@@ -4,7 +4,10 @@ import com.uu_demo.models.entity.Role;
 import com.uu_demo.models.entity.User;
 import lombok.*;
 
-import javax.validation.constraints.*;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Null;
+import java.util.HashSet;
+import java.util.Set;
 
 
 @Getter
@@ -43,18 +46,21 @@ public class UserDto {
                 user.getAvatar(),
                 user.getEmail(),
                 user.getPassword(),
-                user.getRole().getName()
+                user.getRoles().iterator().next().getName()
         );
     }
 
     public static User toUserEntity(UserDto userDto){
+        Set<Role> roles = new HashSet<>();
+        roles.add(new Role(userDto.getRoleName()));
         return new User(
                 userDto.getUserId(),
                 userDto.getFullName(),
                 userDto.getEmail(),
                 userDto.getPassword(),
                 userDto.getAvatar(),
-                new Role(userDto.getRoleName())
+                roles
+
         );
     }
 }

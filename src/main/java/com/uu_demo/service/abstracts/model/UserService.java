@@ -2,7 +2,6 @@ package com.uu_demo.service.abstracts.model;
 
 import com.uu_demo.models.entity.User;
 
-
 import java.util.List;
 import java.util.Optional;
 
@@ -22,6 +21,10 @@ public interface UserService  {
 
     boolean existsAnotherByEmail(String email, Long userId);
 
-    void addUser(User user);
+    void createUser(User user);
+
+    void updateUser(User user);
+
+    void deleteUserById(Long userId);
 
 }

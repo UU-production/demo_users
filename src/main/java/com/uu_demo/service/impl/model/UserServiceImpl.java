@@ -14,9 +14,9 @@ import java.util.Optional;
 
 
 @Service
-public class UserServiceImpl  implements UserService {
+public class UserServiceImpl implements UserService {
 
-    private  UserDao userDao;
+    private UserDao userDao;
 
     public UserServiceImpl(UserDao userDao) {
         this.userDao = userDao;
@@ -61,6 +61,7 @@ public class UserServiceImpl  implements UserService {
     @Override
     @Transactional
     public void updateInfo(User user) {
+
         userDao.updateInfo(user);
     }
 
@@ -72,10 +73,23 @@ public class UserServiceImpl  implements UserService {
 
     @Override
     @Transactional
-    public void addUser(User user) {
-        user.setRole(new Role("ROLE_USER"));
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        userDao.create(user);
+    public void createUser(User user) {
+        if (!(user.isEnabled())) {
+            user.getRoles().add(new Role("ROLE_USER"));
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
+            userDao.create(user);
+        }
+    }
 
+    @Override
+    @Transactional
+    public void updateUser(User user) {
+        userDao.update(user);
+    }
+
+    @Override
+    @Transactional
+    public void deleteUserById(Long userId) {
+        userDao.deleteById(userId);
     }
 }
